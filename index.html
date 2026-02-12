@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Toolkit</title>
+  <style>
+    body{font-family:sans-serif;margin:20px;max-width:600px}
+    h2{margin-top:1.8em}
+    input,textarea,select{padding:6px;font-size:15px}
+    button{padding:6px 14px;cursor:pointer}
+    .error{color:#c00}
+    #todo-list li{text-decoration:none;cursor:pointer;padding:6px 0}
+    #todo-list li.done{text-decoration:line-through;color:#888}
+  </style>
+</head>
+<body>
+
+<h1>Student Toolkit</h1>
+
+<!-- A. Калькулятор оценок -->
+<h2>А. Калькулятор оценок</h2>
+<textarea id="grades" rows="2" placeholder="5,4,3,5,4"></textarea><br>
+<button onclick="calcGrades()">Посчитать</button>
+<div id="gradesResult"></div>
+
+<!-- B. Конвертер температур -->
+<h2>В. Конвертер температур</h2>
+<input type="number" id="tempValue" placeholder="Температура" step="any">
+<select id="tempFrom">
+  <option value="C">°C → °F</option>
+  <option value="F">°F → °C</option>
+</select>
+<button onclick="convertTemp()">Конвертировать</button>
+<div id="tempResult"></div>
+
+<!-- C. To-Do список -->
+<h2>С. To-Do список</h2>
+<input id="todoInput" placeholder="Что нужно сделать?">
+<button onclick="addTodo()">Добавить</button>
+<ul id="todo-list"></ul>
+
+<script>
+// ──────────────────────────────────────────────
+// Модуль A — Оценки
+// ──────────────────────────────────────────────
+function calcGrades() {
+  const input = document.getElementById('grades').value.replace(/\s+/g,'');
+  const out = document.getElementById('gradesResult');
+  out.innerHTML = '';
+
+  if (!input) return out.innerHTML = '<span class="error">Введите оценки</span>';
+
+  const arr = input.split(',').map(n=>Number(n.trim()));
+  if (arr.some(n=>isNaN(n) || n<1 || n>5 || !Number.isInteger(n))) {
+    return out.innerHTML = '<span class="error">Только целые числа 1–5</span>';
+  }
+
+  const sum = arr.reduce((a,b)=>a+b,0);
+  const avg = (sum/arr.length).toFixed(2);
+  out.innerHTML = `Средний: <b>${avg}</b> | мин: ${Math.min(...arr)} | макс: ${Math.max(...arr)} | всего: ${arr.length}`;
+}
+
+// ──────────────────────────────────────────────
+// Модуль B — Температура
+// ──────────────────────────────────────────────
+function convertTemp() {
+  const val  = Number(document.getElementById('tempValue').value);
+  const from = document.getElementById('tempFrom').value;
+  const out  = document.getElementById('tempResult');
+
+  if (isNaN(val)) return out.innerHTML = '<span class="error">Введите число</span>';
+
+  let res;
+  if (from === 'C') {
+    res = (val * 9/5 + 32).toFixed(1) + ' °F';
+  } else {
+    res = ((val - 32) * 5/9).toFixed(1) + ' °C';
+  }
+  out.innerHTML = res;
+}
+
+// ──────────────────────────────────────────────
+// Модуль C — ToDo
+// ──────────────────────────────────────────────
+let todos = JSON.parse(localStorage.getItem('todos') || '[]');
+
+function renderTodos() {
+  const ul = document.getElementById('todo-list');
+  ul.innerHTML = '';
+  todos.forEach((t,i)=>{
+    const li = document.createElement('li');
+    li.textContent = t.text;
+    if (t.done) li.className = 'done';
+    
+    li.onclick = ()=> {
+      todos[i].done = !todos[i].done;
+      saveAndRender();
+    };
+    
+    const del = document.createElement('button');
+    del.textContent = '×';
+    del.style.marginLeft = '12px';
+    del.onclick = e=>{ e.stopPropagation(); todos.splice(i,1); saveAndRender(); };
+    
+    li.appendChild(del);
+    ul.appendChild(li);
+  });
+}
+
+function addTodo() {
+  const inp = document.getElementById('todoInput');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  todos.push({text:txt, done:false});
+  inp.value = '';
+  saveAndRender();
+}
+
+function saveAndRender() {
+  localStorage.setItem('todos', JSON.stringify(todos));
+  renderTodos();
+}
+
+// загрузка при старте
+renderTodos();
+</script>
+
+</body>
+</html>
